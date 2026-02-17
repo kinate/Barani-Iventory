@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { getProducts, addSale } from '../services/mockDataService';
-import { ShoppingBag, Search, Plus, Minus, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Minus, CheckCircle, AlertCircle, X, HandCoins, TrendingUp } from 'lucide-react';
 
 interface SalesEntryProps {
   onSuccess: () => void;
@@ -51,6 +50,11 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
     e.preventDefault();
     if (!selectedProduct) return;
     
+    if (formData.commission > (formData.soldPrice * formData.quantity)) {
+      setError('Commission cannot be greater than the sale price.');
+      return;
+    }
+
     try {
       addSale({
         ...formData,
@@ -63,6 +67,9 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
       setTimeout(() => setError(''), 3000);
     }
   };
+
+  const totalRevenue = formData.quantity * formData.soldPrice;
+  const netRevenue = totalRevenue - formData.commission;
 
   if (isSuccess) {
     return (
@@ -126,25 +133,36 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h4 className="font-bold text-blue-900">{selectedProduct.name}</h4>
-                    <p className="text-xs text-blue-700">Recommended Price: TSh {selectedProduct.price.toLocaleString()}</p>
+                    <p className="text-xs text-blue-700">Ref: {selectedProduct.product_number}</p>
                   </div>
                   <button onClick={() => setSelectedProduct(null)} className="text-blue-400 hover:text-blue-600">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
+                
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">Stock Status</label>
-                    <div className="font-black text-blue-900">
-                      {selectedProduct.stock_quantity} {selectedProduct.stock_quantity === 1 ? 'Unit' : 'Units'} available
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <label className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">Total Due</label>
-                    <div className="font-black text-2xl text-blue-900">
-                      TSh {(formData.quantity * formData.soldPrice).toLocaleString()}
-                    </div>
-                  </div>
+                   <div className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">Gross Revenue</label>
+                        <div className="font-black text-xl text-blue-900">
+                          TSh {totalRevenue.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Commission Deduction</label>
+                        <div className="font-black text-xl text-rose-600 flex items-center gap-1">
+                          - TSh {formData.commission.toLocaleString()}
+                        </div>
+                      </div>
+                   </div>
+                   <div className="bg-white/50 p-4 rounded-xl border border-blue-100 flex flex-col justify-center text-right">
+                      <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center justify-end gap-1">
+                        <TrendingUp className="w-3 h-3" /> Net Profit
+                      </label>
+                      <div className="font-black text-3xl text-emerald-600">
+                        TSh {netRevenue.toLocaleString()}
+                      </div>
+                   </div>
                 </div>
               </div>
             )}
@@ -154,7 +172,7 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
         {/* Right: Customer & Finalization */}
         <div className="lg:col-span-2 space-y-6">
           <form onSubmit={handleSale} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <h3 className="font-bold text-xl">Customer Details</h3>
+            <h3 className="font-bold text-xl">Sale Details</h3>
             
             <div className="space-y-4">
               <div>
@@ -169,11 +187,11 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Customer Full Name</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Customer Name</label>
                 <input 
                   required
                   type="text"
-                  placeholder="e.g. Salim Mohammed"
+                  placeholder="Full Name"
                   value={formData.customerName}
                   onChange={e => setFormData({ ...formData, customerName: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
@@ -206,7 +224,7 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Selling Price (TSh)</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Unit Price (TSh)</label>
                 <input 
                   required
                   type="number"
@@ -217,20 +235,23 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Commission (TSh)</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Commission to Deduct</span>
+                  <HandCoins className="w-4 h-4 text-rose-500" />
+                </label>
                 <input 
                   type="number"
-                  placeholder="0"
+                  placeholder="Commission Amount"
                   value={formData.commission}
                   onChange={e => setFormData({ ...formData, commission: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-600"
+                  className="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-600"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 text-xs font-medium animate-pulse">
-                <AlertCircle className="w-4 h-4" />
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 text-xs font-medium">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
             )}
@@ -238,9 +259,9 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
             <button 
               type="submit"
               disabled={!selectedProduct || selectedProduct.stock_quantity < formData.quantity}
-              className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-100 disabled:opacity-50 disabled:grayscale transition-all transform hover:scale-[1.02] active:scale-95"
+              className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg disabled:opacity-50 transition-all transform hover:bg-slate-800 active:scale-95"
             >
-              COMPLETE TRANSACTION
+              FINALIZE SALE
             </button>
           </form>
         </div>
