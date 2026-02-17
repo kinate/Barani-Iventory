@@ -11,9 +11,9 @@ const BackendCodeViewer: React.FC = () => {
   };
 
   const wranglerConfig = `# wrangler.toml
-name = "batani-store-api"
+name = "batani-store"
 main = "worker.ts"
-compatibility_date = "2024-03-01"
+compatibility_date = "2024-04-03"
 
 [assets]
 directory = "./"
@@ -22,7 +22,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "batani_db"
-database_id = "your-database-id-from-dashboard"
+database_id = "your-database-id-from-cloudflare-dashboard"
 
 [[r2_buckets]]
 binding = "BUCKET"
@@ -86,69 +86,6 @@ CREATE TABLE sales (
 CREATE INDEX idx_product_number ON products(product_number);
 CREATE INDEX idx_customer_phone ON customers(phone_number);`;
 
-  const workerCode = `/**
- * Batani Store Cloudflare Worker - Inventory & Sales API
- */
-
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const method = request.method;
-
-    const jsonResponse = (data: any, status = 200) => 
-      new Response(JSON.stringify(data), {
-        status,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
-
-    try {
-      if (path === '/api/sales' && method === 'POST') {
-        const { customerName, phone, productId, quantity, soldPrice, commission } = await request.json();
-        
-        let customer = await env.DB.prepare('SELECT id FROM customers WHERE phone_number = ?').bind(phone).first();
-        if (!customer) {
-          customer = await env.DB.prepare(
-            'INSERT INTO customers (full_name, phone_number) VALUES (?, ?) RETURNING id'
-          ).bind(customerName, phone).first();
-        }
-
-        const product = await env.DB.prepare('SELECT stock_quantity FROM products WHERE id = ?').bind(productId).first();
-        if (!product || product.stock_quantity < quantity) {
-          return jsonResponse({ error: 'Insufficient stock' }, 400);
-        }
-
-        const total = quantity * soldPrice;
-        await env.DB.prepare(\`
-          INSERT INTO sales (customer_id, product_id, quantity, sold_price, commission, total_amount)
-          VALUES (?, ?, ?, ?, ?, ?)
-        \`).bind(customer.id, productId, quantity, soldPrice, commission || 0, total).run();
-
-        await env.DB.prepare('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?')
-          .bind(quantity, productId).run();
-
-        return jsonResponse({ success: true, total });
-      }
-
-      if (path === '/api/reports/dashboard' && method === 'GET') {
-        const stats = await env.DB.prepare(\`
-          SELECT 
-            (SELECT SUM(total_amount) FROM sales) as totalRevenue,
-            (SELECT SUM(commission) FROM sales) as totalCommission,
-            (SELECT COUNT(*) FROM sales) as totalSalesCount,
-            (SELECT SUM(quantity) FROM sales) as totalItemsSold,
-            (SELECT COUNT(*) FROM customers) as totalCustomers
-        \`).first();
-        return jsonResponse(stats);
-      }
-
-      return jsonResponse({ error: 'Not found' }, 404);
-    } catch (err: any) {
-      return jsonResponse({ error: err.message }, 500);
-    }
-  }
-};`;
-
   return (
     <div className="space-y-8 pb-12">
       <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl flex items-start gap-4">
@@ -156,10 +93,14 @@ export default {
           <Terminal className="text-white w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-blue-900">Deployment Guide</h2>
+          <h2 className="text-lg font-bold text-blue-900">Deployment Instructions</h2>
           <p className="text-blue-700 text-sm mt-1 leading-relaxed">
-            Ensure you have a <code className="bg-white px-2 py-0.5 rounded border border-blue-200">wrangler.toml</code> in your root directory to fix deployment errors.
+            Ensure your project root contains both <code className="bg-white px-2 py-0.5 rounded border border-blue-200">wrangler.toml</code> and <code className="bg-white px-2 py-0.5 rounded border border-blue-200">worker.ts</code>.
           </p>
+          <div className="mt-4 flex gap-2">
+             <code className="bg-slate-900 text-slate-100 px-3 py-1 rounded text-xs">npx wrangler d1 create batani_db</code>
+             <code className="bg-slate-900 text-slate-100 px-3 py-1 rounded text-xs">npx wrangler deploy</code>
+          </div>
         </div>
       </div>
 
@@ -181,7 +122,7 @@ export default {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">1. D1 Database Schema</h3>
+          <h3 className="font-bold text-lg">D1 Database Schema</h3>
           <button 
             onClick={() => copyToClipboard(schemaSql, 'schema')}
             className="text-xs font-bold text-slate-500 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm"
@@ -192,22 +133,6 @@ export default {
         </div>
         <pre className="bg-slate-900 text-slate-300 p-6 rounded-3xl overflow-x-auto text-xs font-mono leading-relaxed shadow-xl">
           {schemaSql}
-        </pre>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">2. Worker API Logic</h3>
-          <button 
-            onClick={() => copyToClipboard(workerCode, 'worker')}
-            className="text-xs font-bold text-slate-500 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm"
-          >
-            {copied === 'worker' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-            {copied === 'worker' ? 'Copied' : 'Copy Code'}
-          </button>
-        </div>
-        <pre className="bg-slate-900 text-slate-300 p-6 rounded-3xl overflow-x-auto text-xs font-mono leading-relaxed shadow-xl">
-          {workerCode}
         </pre>
       </div>
     </div>

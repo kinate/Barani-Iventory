@@ -1,8 +1,7 @@
-name = "batani-store-api"
+name = "batani-store"
 main = "worker.ts"
-compatibility_date = "2024-03-01"
+compatibility_date = "2024-04-03"
 
-# Define the assets directory for the frontend
 [assets]
 directory = "./"
 binding = "ASSETS"
