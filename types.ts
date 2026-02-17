@@ -29,4 +29,27 @@ export interface Product {
   supplier?: Supplier;
 }
 
-export type ViewState = 'dashboard' | 'suppliers' | 'products' | 'search' | 'backend-code';
+export interface Customer {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  email?: string;
+  address?: string;
+  created_at: string;
+}
+
+export interface Sale {
+  id: string;
+  customer_id: string;
+  product_id: string;
+  quantity: number;
+  sold_price: number;
+  total_amount: number;
+  sale_date: string;
+  created_at: string;
+  // Join data
+  customer?: Customer;
+  product?: Product;
+}
+
+export type ViewState = 'dashboard' | 'suppliers' | 'products' | 'sales' | 'customers' | 'backend-code';

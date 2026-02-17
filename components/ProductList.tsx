@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product, Supplier } from '../types';
 import { getProducts, getSuppliers, saveProduct, deleteProduct, findProductByNumber } from '../services/mockDataService';
@@ -169,9 +170,15 @@ const ProductList: React.FC = () => {
                 </button>
               </div>
               <div className="absolute bottom-3 left-3">
-                <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${p.stock_quantity < 10 ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-                  {p.stock_quantity} in stock
-                </span>
+                {p.stock_quantity === 0 ? (
+                  <span className="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white shadow-lg">
+                    Sold out
+                  </span>
+                ) : (
+                  <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${p.stock_quantity < 10 ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                    {p.stock_quantity} in stock
+                  </span>
+                )}
               </div>
             </div>
             <div className="p-5">
@@ -180,7 +187,9 @@ const ProductList: React.FC = () => {
                   <h3 className="font-bold text-slate-900 truncate pr-2">{p.name}</h3>
                   <p className="text-xs text-slate-400 font-medium">SKU: {p.product_number}</p>
                 </div>
-                <span className="font-black text-blue-600 text-lg">${p.price}</span>
+                <div className="text-right">
+                  <span className="font-black text-blue-600 text-lg block leading-tight">TSh {p.price.toLocaleString()}</span>
+                </div>
               </div>
               <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10 leading-relaxed">
                 {p.description}
@@ -198,7 +207,6 @@ const ProductList: React.FC = () => {
 
       {products.length === 0 && (
         <div className="py-40 text-center text-slate-400 bg-white rounded-3xl border border-slate-100">
-          {/* Fixed: Added the missing Box icon component from lucide-react */}
           <Box className="w-12 h-12 mx-auto mb-4 opacity-20" />
           <p>No products found matching your search.</p>
         </div>
@@ -251,11 +259,11 @@ const ProductList: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Price ($)</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Price (TSh)</label>
                       <input 
                         required
                         type="number" 
-                        step="0.01"
+                        step="1"
                         value={formData.price}
                         onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
                         className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"

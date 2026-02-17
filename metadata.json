@@ -1,5 +1,5 @@
 {
-  "name": "Cloudflare Inventory Pro",
+  "name": "Batani store",
   "description": "A comprehensive inventory management system with Cloudflare Worker backend and D1/R2 integration, featuring AI-powered product description generation.",
   "requestFramePermissions": [
     "camera"

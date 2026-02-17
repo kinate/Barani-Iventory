@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, Product, Supplier } from '../types';
-import { getProducts, getSuppliers } from '../services/mockDataService';
-import { Package, Truck, AlertTriangle, DollarSign, ArrowUpRight } from 'lucide-react';
+import { ViewState } from '../types';
+import { getDashboardMetrics, getMonthlyReport, getCustomerSpendingReport } from '../services/mockDataService';
+import { Package, Users, AlertTriangle, DollarSign, ArrowUpRight, ShoppingCart, TrendingUp } from 'lucide-react';
 
 interface DashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -12,11 +12,11 @@ const StatCard = ({ title, value, icon: IconComponent, color, trend }: any) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
     <div>
       <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-slate-900">{value}</h3>
+      <h3 className="text-2xl font-black text-slate-900">{value}</h3>
       {trend && (
         <p className="mt-2 flex items-center gap-1 text-xs text-green-600 font-medium">
-          <ArrowUpRight className="w-3 h-3" />
-          {trend} from last month
+          <TrendingUp className="w-3 h-3" />
+          {trend}
         </p>
       )}
     </div>
@@ -27,127 +27,123 @@ const StatCard = ({ title, value, icon: IconComponent, color, trend }: any) => (
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const [stats, setStats] = useState({
-    products: 0,
-    suppliers: 0,
-    lowStock: 0,
-    totalValue: 0
-  });
+  const [metrics, setMetrics] = useState<any>(null);
+  const [monthlyReport, setMonthlyReport] = useState<any[]>([]);
+  const [customerReport, setCustomerReport] = useState<any[]>([]);
 
   useEffect(() => {
-    const products = getProducts();
-    const suppliers = getSuppliers();
-    
-    setStats({
-      products: products.length,
-      suppliers: suppliers.length,
-      lowStock: products.filter(p => p.stock_quantity < 10).length,
-      totalValue: products.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0)
-    });
+    setMetrics(getDashboardMetrics());
+    setMonthlyReport(getMonthlyReport());
+    setCustomerReport(getCustomerSpendingReport().slice(0, 5));
   }, []);
 
-  const recentProducts = getProducts().slice(-5).reverse();
+  if (!metrics) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Total Products" 
-          value={stats.products} 
-          icon={Package} 
-          color="bg-blue-600" 
-          trend="+12%" 
-        />
-        <StatCard 
-          title="Suppliers" 
-          value={stats.suppliers} 
-          icon={Truck} 
-          color="bg-purple-600" 
-          trend="+3%" 
-        />
-        <StatCard 
-          title="Low Stock Items" 
-          value={stats.lowStock} 
-          icon={AlertTriangle} 
-          color="bg-amber-500" 
-        />
-        <StatCard 
-          title="Inventory Value" 
-          value={`$${stats.totalValue.toLocaleString()}`} 
+          title="Lifetime Revenue" 
+          value={`TSh ${metrics.totalRevenue.toLocaleString()}`} 
           icon={DollarSign} 
           color="bg-emerald-600" 
+          trend={`TSh ${metrics.monthlyRevenue.toLocaleString()} this month`}
+        />
+        <StatCard 
+          title="Total Sales" 
+          value={metrics.totalSalesCount} 
+          icon={ShoppingCart} 
+          color="bg-blue-600" 
+        />
+        <StatCard 
+          title="Items Sold" 
+          value={metrics.totalItemsSold} 
+          icon={Package} 
+          color="bg-purple-600" 
+        />
+        <StatCard 
+          title="Loyal Customers" 
+          value={metrics.totalCustomers} 
+          icon={Users} 
+          color="bg-amber-600" 
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-lg">Recently Added Products</h3>
-            <button 
-              onClick={() => onNavigate('products')}
-              className="text-blue-600 text-sm font-semibold hover:underline"
-            >
-              View All
-            </button>
+        <div className="lg:col-span-2 space-y-8">
+          {/* Monthly Sales Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="font-bold text-lg mb-6">Monthly Sales Performance</h3>
+            <div className="space-y-4">
+              {monthlyReport.length > 0 ? monthlyReport.map((item, idx) => (
+                <div key={item.month} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-slate-500 text-xs">
+                      {item.month}
+                    </div>
+                    <div className="h-2 bg-blue-100 rounded-full flex-1 w-32 lg:w-64 overflow-hidden">
+                       <div 
+                         className="h-full bg-blue-600 transition-all duration-1000" 
+                         style={{ width: `${Math.min(100, (item.total / metrics.totalRevenue) * 500)}%` }}
+                       />
+                    </div>
+                  </div>
+                  <span className="font-bold text-slate-900">TSh {item.total.toLocaleString()}</span>
+                </div>
+              )) : <p className="text-slate-400 text-sm">No sales data recorded yet.</p>}
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-slate-500 text-sm border-b border-slate-100">
-                  <th className="pb-3 font-medium">Product</th>
-                  <th className="pb-3 font-medium">SKU</th>
-                  <th className="pb-3 font-medium text-right">Price</th>
-                  <th className="pb-3 font-medium text-right">Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentProducts.length > 0 ? recentProducts.map(p => (
-                  <tr key={p.id} className="border-b border-slate-50 last:border-none">
-                    <td className="py-4 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded bg-slate-100 flex-shrink-0">
-                        {p.images?.[0] && <img src={p.images[0].image_url} className="w-full h-full object-cover rounded" />}
-                      </div>
-                      <span className="font-medium text-sm">{p.name}</span>
-                    </td>
-                    <td className="py-4 text-sm text-slate-500">{p.product_number}</td>
-                    <td className="py-4 text-sm text-slate-900 text-right font-semibold">${p.price}</td>
-                    <td className="py-4 text-right">
-                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.stock_quantity < 10 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                        {p.stock_quantity} units
-                       </span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={4} className="py-10 text-center text-slate-400">No products found. Start adding some!</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+
+          {/* Low Stock Alerts */}
+          {metrics.lowStockCount > 0 && (
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-500 rounded-xl text-white">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-amber-900">Inventory Alert</h4>
+                  <p className="text-amber-700 text-sm">{metrics.lowStockCount} items are running low on stock. Restock soon!</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => onNavigate('products')}
+                className="px-4 py-2 bg-white text-amber-900 font-bold text-sm rounded-lg border border-amber-200 hover:bg-amber-100"
+              >
+                Review Inventory
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="bg-slate-900 rounded-2xl p-8 text-white flex flex-col justify-between">
-          <div>
-            <h3 className="text-2xl font-bold mb-4">Ready to expand?</h3>
-            <p className="text-slate-400 mb-8 leading-relaxed">
-              Connect more suppliers and use our Gemini-powered AI to generate perfect product listings in seconds.
-            </p>
+        <div className="space-y-8">
+          <div className="bg-slate-900 rounded-3xl p-8 text-white">
+            <h3 className="text-xl font-bold mb-6">Top Spenders</h3>
+            <div className="space-y-6">
+              {customerReport.map((c, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">{c.name}</p>
+                      <p className="text-[10px] text-slate-500">{c.purchaseCount} purchases</p>
+                    </div>
+                  </div>
+                  <span className="text-blue-400 font-black text-sm">TSh {c.totalSpent.toLocaleString()}</span>
+                </div>
+              ))}
+              {customerReport.length === 0 && <p className="text-slate-600 text-sm">No customer data.</p>}
+            </div>
           </div>
-          <div className="space-y-4">
-            <button 
-              onClick={() => onNavigate('suppliers')}
-              className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-100 transition-colors"
-            >
-              Manage Suppliers
-            </button>
-            <button 
-              onClick={() => onNavigate('products')}
-              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Add New Product
-            </button>
-          </div>
+
+          <button 
+            onClick={() => onNavigate('sales')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1 active:scale-95"
+          >
+            RECORD NEW SALE
+          </button>
         </div>
       </div>
     </div>
