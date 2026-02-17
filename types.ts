@@ -44,6 +44,7 @@ export interface Sale {
   product_id: string;
   quantity: number;
   sold_price: number;
+  commission: number;
   total_amount: number;
   sale_date: string;
   created_at: string;

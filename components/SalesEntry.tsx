@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { getProducts, addSale } from '../services/mockDataService';
-import { ShoppingBag, Search, Plus, Minus, CheckCircle, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Minus, CheckCircle, AlertCircle, X } from 'lucide-react';
 
 interface SalesEntryProps {
   onSuccess: () => void;
@@ -18,7 +18,8 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
     customerName: '',
     phone: '',
     quantity: 1,
-    soldPrice: 0
+    soldPrice: 0,
+    commission: 0
   });
 
   const [error, setError] = useState('');
@@ -41,7 +42,7 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
 
   const handleSelectProduct = (p: Product) => {
     setSelectedProduct(p);
-    setFormData({ ...formData, soldPrice: p.price, quantity: 1 });
+    setFormData({ ...formData, soldPrice: p.price, quantity: 1, commission: 0 });
     setSearchQuery('');
     setFilteredProducts([]);
   };
@@ -214,6 +215,17 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Commission (TSh)</label>
+                <input 
+                  type="number"
+                  placeholder="0"
+                  value={formData.commission}
+                  onChange={e => setFormData({ ...formData, commission: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-600"
+                />
+              </div>
             </div>
 
             {error && (
@@ -236,7 +248,5 @@ const SalesEntry: React.FC<SalesEntryProps> = ({ onSuccess }) => {
     </div>
   );
 };
-
-const X = ({ className }: { className?: string }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
 export default SalesEntry;

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Sale } from '../types';
 import { getCustomers, getSales, deleteCustomer } from '../services/mockDataService';
-import { User, Phone, Mail, MapPin, History, Trash2, X } from 'lucide-react';
+import { User, Phone, Mail, MapPin, History, Trash2, X, HandCoins } from 'lucide-react';
 
 const CustomerList: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -108,15 +108,23 @@ const CustomerList: React.FC = () => {
               {customerSales.length > 0 ? (
                 <div className="space-y-4">
                   {customerSales.map(s => (
-                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900 text-sm">{s.product?.name || 'Deleted Item'}</p>
-                        <p className="text-[10px] text-slate-500">{new Date(s.sale_date).toLocaleDateString()} • {s.quantity} units</p>
+                    <div key={s.id} className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-slate-900 text-sm">{s.product?.name || 'Deleted Item'}</p>
+                          <p className="text-[10px] text-slate-500">{new Date(s.sale_date).toLocaleDateString()} • {s.quantity} units</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-blue-600">TSh {s.total_amount.toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400">TSh {s.sold_price.toLocaleString()} / ea</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-black text-blue-600">TSh {s.total_amount.toLocaleString()}</p>
-                        <p className="text-[10px] text-slate-400">TSh {s.sold_price.toLocaleString()} / ea</p>
-                      </div>
+                      {s.commission > 0 && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-rose-500 font-bold uppercase tracking-wider">
+                          <span className="flex items-center gap-1"><HandCoins className="w-3 h-3" /> Commission Paid</span>
+                          <span>TSh {s.commission.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

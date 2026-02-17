@@ -59,6 +59,7 @@ CREATE TABLE sales (
     product_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     sold_price REAL NOT NULL,
+    commission REAL DEFAULT 0.0,
     total_amount REAL NOT NULL,
     sale_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -89,7 +90,7 @@ export default {
     try {
       // --- SALES HANDLER (Transaction Logic) ---
       if (path === '/api/sales' && method === 'POST') {
-        const { customerName, phone, productId, quantity, soldPrice } = await request.json();
+        const { customerName, phone, productId, quantity, soldPrice, commission } = await request.json();
         
         // 1. Transaction Start (Simulated with sequential awaits)
         // Find or create customer
@@ -109,9 +110,9 @@ export default {
         // 3. Record Sale
         const total = quantity * soldPrice;
         await env.DB.prepare(\`
-          INSERT INTO sales (customer_id, product_id, quantity, sold_price, total_amount)
-          VALUES (?, ?, ?, ?, ?)
-        \`).bind(customer.id, productId, quantity, soldPrice, total).run();
+          INSERT INTO sales (customer_id, product_id, quantity, sold_price, commission, total_amount)
+          VALUES (?, ?, ?, ?, ?, ?)
+        \`).bind(customer.id, productId, quantity, soldPrice, commission || 0, total).run();
 
         // 4. Update Product Stock
         await env.DB.prepare('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?')
@@ -125,6 +126,7 @@ export default {
         const stats = await env.DB.prepare(\`
           SELECT 
             (SELECT SUM(total_amount) FROM sales) as totalRevenue,
+            (SELECT SUM(commission) FROM sales) as totalCommission,
             (SELECT COUNT(*) FROM sales) as totalSalesCount,
             (SELECT SUM(quantity) FROM sales) as totalItemsSold,
             (SELECT COUNT(*) FROM customers) as totalCustomers
@@ -150,7 +152,7 @@ export default {
         <div>
           <h2 className="text-lg font-bold text-blue-900">Deployment Guide</h2>
           <p className="text-blue-700 text-sm mt-1 mb-4 leading-relaxed">
-            Updated schema includes <code className="bg-white px-2 py-0.5 rounded border border-blue-200">customers</code> and <code className="bg-white px-2 py-0.5 rounded border border-blue-200">sales</code> tables.
+            Updated schema includes <code className="bg-white px-2 py-0.5 rounded border border-blue-200">commission</code> column in the <code className="bg-white px-2 py-0.5 rounded border border-blue-200">sales</code> table.
           </p>
         </div>
       </div>

@@ -138,7 +138,8 @@ export const addSale = (saleData: {
   phone: string, 
   productId: string, 
   quantity: number, 
-  soldPrice: number 
+  soldPrice: number,
+  commission: number
 }) => {
   const products = getProducts();
   const product = products.find(p => p.id === saleData.productId);
@@ -165,6 +166,7 @@ export const addSale = (saleData: {
     product_id: product.id,
     quantity: saleData.quantity,
     sold_price: saleData.soldPrice,
+    commission: saleData.commission,
     total_amount: saleData.quantity * saleData.soldPrice,
     sale_date: new Date().toISOString(),
     created_at: new Date().toISOString()
@@ -185,6 +187,7 @@ export const getDashboardMetrics = () => {
   const products = getProducts();
   
   const totalRevenue = sales.reduce((acc, s) => acc + s.total_amount, 0);
+  const totalCommission = sales.reduce((acc, s) => acc + (s.commission || 0), 0);
   const totalItemsSold = sales.reduce((acc, s) => acc + s.quantity, 0);
   
   const now = new Date();
@@ -196,6 +199,7 @@ export const getDashboardMetrics = () => {
 
   return {
     totalRevenue,
+    totalCommission,
     totalSalesCount: sales.length,
     totalItemsSold,
     totalCustomers: customers.length,

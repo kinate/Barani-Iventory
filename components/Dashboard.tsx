@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState } from '../types';
 import { getDashboardMetrics, getMonthlyReport, getCustomerSpendingReport } from '../services/mockDataService';
-import { Package, Users, AlertTriangle, DollarSign, ArrowUpRight, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Package, Users, AlertTriangle, DollarSign, ArrowUpRight, ShoppingCart, TrendingUp, HandCoins } from 'lucide-react';
 
 interface DashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -41,13 +41,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard 
           title="Lifetime Revenue" 
           value={`TSh ${metrics.totalRevenue.toLocaleString()}`} 
           icon={DollarSign} 
           color="bg-emerald-600" 
           trend={`TSh ${metrics.monthlyRevenue.toLocaleString()} this month`}
+        />
+        <StatCard 
+          title="Total Commission" 
+          value={`TSh ${metrics.totalCommission.toLocaleString()}`} 
+          icon={HandCoins} 
+          color="bg-rose-600" 
         />
         <StatCard 
           title="Total Sales" 
