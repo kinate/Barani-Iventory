@@ -9,8 +9,8 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "batani_db"
-database_id = "your-database-id-here"
+database_id = "6f6e5374-c21f-45a8-ba95-7947979117cd"
 
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "batani-assets"
+bucket_name = "bataniassets"
